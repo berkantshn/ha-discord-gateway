@@ -1,0 +1,36 @@
+name: Discord Gateway
+version: "1.1.0"
+slug: discord_gateway
+description: Selective DNS + SNI gateway for Home Assistant OS on Raspberry Pi. Only the domains you list pass through it (gost + ByeDPI).
+url: https://github.com/berkantshn/ha-discord-gateway
+arch:
+  - aarch64
+startup: services
+boot: auto
+init: false
+# DNS (53) ve SNI (80/443) portlarını doğrudan Pi'nin LAN IP'sinde dinlemek için
+host_network: true
+options:
+  byedpi_args: "--tlsrec 3+s --split 1+s"
+  domains:
+    - discord.com
+    - discord.gg
+    - discordapp.com
+    - discordapp.net
+    - discord.gift
+    - discord.new
+    - discord.dev
+    - discordcdn.com
+    - dis.gd
+  dns_upstreams:
+    - https://1.1.1.1/dns-query
+    - https://8.8.8.8/dns-query
+  log_level: warn
+schema:
+  pi_ip: str?
+  byedpi_args: str
+  domains:
+    - str
+  dns_upstreams:
+    - url
+  log_level: list(debug|info|warn|error)
