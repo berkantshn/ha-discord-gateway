@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Assistant Discord Gateway: routing demo</title>
+<meta name="description" content="See which traffic passes through the Raspberry Pi gateway and which goes straight to your router.">
+<style>
+  :root { color-scheme: light dark; --bg:#f6f7f9; --card:#fff; --text:#1c2026; --muted:#5d6672; --line:#d9dde3; --accent:#5865f2; --ok:#16803c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#14171b; --card:#1d2126; --text:#e7eaee; --muted:#9aa4b0; --line:#333a42; --accent:#8c95ff; --ok:#57d186; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:32px 18px 64px; }
+  h1 { margin:0 0 6px; font-size:1.8rem; }
+  .lead { color:var(--muted); margin:0 0 18px; }
+  .warn { border-left:4px solid #d9822b; background:var(--card); padding:10px 14px; border-radius:4px; margin:0 0 20px; }
+  .bar { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  a { color:var(--accent); }
+  button { font:inherit; padding:8px 14px; border-radius:7px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:9px; padding:16px; margin-bottom:18px; }
+  input { width:100%; font:15px ui-monospace,Consolas,monospace; padding:10px 12px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--text); }
+  .samples { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .samples button { font:13px ui-monospace,Consolas,monospace; padding:5px 10px; }
+  .flow { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:16px 0 10px; }
+  .node { border:1px solid var(--line); border-radius:7px; padding:7px 11px; background:var(--bg); font-size:14px; }
+  .node.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .arrow { color:var(--muted); }
+  .verdict { font-weight:600; margin:0; }
+  .verdict.yes { color:var(--accent); }
+  .verdict.no { color:var(--ok); }
+  .why { color:var(--muted); margin:6px 0 0; font-size:14px; }
+  code { font-family:ui-monospace,Consolas,monospace; font-size:.92em; }
+  small { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <div class="bar">
+    <button id="lang" type="button">Türkçe</button>
+    <a href="https://github.com/berkantshn/ha-discord-gateway" data-t="repo"></a>
+    <a href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fberkantshn%2Fha-discord-gateway" data-t="add"></a>
+  </div>
+  <h1 data-t="title"></h1>
+  <p class="lead" data-t="lead"></p>
+  <p class="warn" data-t="warn"></p>
+
+  <section class="card">
+    <label for="host"><strong data-t="ask"></strong></label>
+    <input id="host" type="text" value="cdn.discordapp.com" spellcheck="false" autocomplete="off">
+    <div class="samples" id="samples"></div>
+    <div class="flow" aria-hidden="true">
+      <span class="node on" data-t="device"></span><span class="arrow">→</span>
+      <span class="node" id="nodePi" data-t="pi"></span><span class="arrow" id="arrowPi">→</span>
+      <span class="node on" data-t="router"></span><span class="arrow">→</span>
+      <span class="node on" data-t="internet"></span>
+    </div>
+    <p class="verdict" id="verdict" role="status"></p>
+    <p class="why" id="why"></p>
+  </section>
+  <small data-t="note"></small>
+</main>
+
+<script type="module">
+import { parseDomains, normalizeHost, route } from './route.js';
+
+const T = {
+  en: {
+    repo:'Source on GitHub', add:'Add to Home Assistant', title:'Home Assistant Discord Gateway',
+    lead:'A selective DNS + SNI gateway for Raspberry Pi. Only the domains you list pass through it; all other traffic goes straight to your router.',
+    warn:'This page only shows the routing rule. It is not a Windows or PC app: the add-on needs an always-on Raspberry Pi running Home Assistant OS.',
+    ask:'Type any website address:', device:'Your device', pi:'Raspberry Pi', router:'Router', internet:'Internet',
+    yes:'Passes through the gateway', no:'Goes straight to your router', bad:'That does not look like a domain name.',
+    whyYes:(m) => `It matches "${m}" in the default list, so the Pi forwards it. The connection stays encrypted end to end; the add-on cannot read it.`,
+    whyNo:'It is not on the list, so the Pi is not involved in the connection. It only answers the DNS lookup, over DoH.',
+    note:'The list comes from the add-on\'s default config.yaml, and you can change it in the add-on options. The rule is the same one run.sh gives to gost: a listed domain and its subdomains.',
+  },
+  tr: {
+    repo:"GitHub'da kaynak kod", add:"Home Assistant'a ekle", title:'Home Assistant Discord Geçidi',
+    lead:"Raspberry Pi için seçici DNS + SNI geçidi. Yalnızca listelediğin alan adları içinden geçer; diğer tüm trafik doğrudan yönlendiricine gider.",
+    warn:"Bu sayfa yalnızca yönlendirme kuralını gösterir. Bu bir Windows veya PC uygulaması değildir: eklenti, Home Assistant OS çalıştıran ve sürekli açık duran bir Raspberry Pi gerektirir.",
+    ask:'Bir site adresi yaz:', device:'Cihazın', pi:'Raspberry Pi', router:'Yönlendirici', internet:'İnternet',
+    yes:'Geçitten geçer', no:'Doğrudan yönlendiriciye gider', bad:'Bu bir alan adına benzemiyor.',
+    whyYes:(m) => `Varsayılan listedeki "${m}" ile eşleşiyor, bu yüzden Pi iletir. Bağlantı uçtan uca şifreli kalır; eklenti içeriği okuyamaz.`,
+    whyNo:'Listede olmadığı için Pi bağlantının içinde yer almaz. Yalnızca DNS sorgusunu DoH üzerinden yanıtlar.',
+    note:"Liste eklentinin varsayılan config.yaml dosyasından gelir, eklenti ayarlarından değiştirebilirsin. Kural, run.sh'ın gost'a verdiği kuralın aynısıdır: listedeki alan adı ve alt alan adları.",
+  },
+};
+const $ = (id) => document.getElementById(id);
+let lang = (navigator.language || '').toLowerCase().startsWith('tr') ? 'tr' : 'en';
+let domains = [];
+
+function render() {
+  const t = T[lang];
+  const host = normalizeHost($('host').value);
+  const verdict = $('verdict');
+  verdict.className = 'verdict';
+  if (!host) {
+    verdict.textContent = t.bad;
+    $('why').textContent = '';
+    $('nodePi').classList.remove('on');
+    return;
+  }
+  const r = route(host, domains);
+  verdict.classList.add(r.viaGateway ? 'yes' : 'no');
+  verdict.textContent = r.viaGateway ? t.yes : t.no;
+  $('why').textContent = r.viaGateway ? t.whyYes(r.match) : t.whyNo;
+  $('nodePi').classList.toggle('on', r.viaGateway);
+  $('nodePi').style.opacity = r.viaGateway ? 1 : .35;
+  $('arrowPi').style.opacity = r.viaGateway ? 1 : .35;
+}
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T[lang][el.dataset.t]; });
+  $('lang').textContent = lang === 'tr' ? 'English' : 'Türkçe';
+  render();
+}
+$('lang').addEventListener('click', () => { lang = lang === 'tr' ? 'en' : 'tr'; applyLang(); });
+$('host').addEventListener('input', render);
+for (const sample of ['cdn.discordapp.com', 'discord.gg', 'google.com', 'notdiscord.com']) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = sample;
+  b.addEventListener('click', () => { $('host').value = sample; render(); });
+  $('samples').append(b);
+}
+domains = parseDomains(await (await fetch('config.yaml')).text());
+applyLang();
+</script>
+</body>
+</html>

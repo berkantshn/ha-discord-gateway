@@ -1,0 +1,21 @@
+# Made By FALCREB
+# v ile başlayan her tag'de indirilebilir paketi GitHub Releases'e yükler.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: (cd addon && zip -r ../discord_gateway-addon.zip discord_gateway)
+      - run: sha256sum discord_gateway-addon.zip > discord_gateway-addon.zip.sha256
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" discord_gateway-addon.zip discord_gateway-addon.zip.sha256 --generate-notes --verify-tag

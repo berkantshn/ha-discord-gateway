@@ -8,6 +8,10 @@
 > çalıştıran bir Raspberry Pi (64-bit ARM, `aarch64`) gerektirir. Home Assistant eklentisi olarak kurulur,
 > ardından cihazlarınız bu eklentiye yönlendirilir.
 
+[![Add to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fberkantshn%2Fha-discord-gateway)
+
+**[▶ Try the routing demo](https://berkantshn.github.io/ha-discord-gateway/)**: type a website and see whether it passes through the gateway.
+
 [English](#english) | [Türkçe](#türkçe)
 
 ## English
@@ -133,15 +137,15 @@ include the upstream licence notices with it.
 
 **From this repository**
 
-1. In Home Assistant, open Settings → Add-ons (or Apps) → the store → ⋮ → Repositories.
-2. Add `https://github.com/berkantshn/ha-discord-gateway`.
+1. Press the **Add to Home Assistant** button at the top of this page. Or open Settings → Add-ons (or Apps) → the store → ⋮ → Repositories.
+2. If you did not use the button, add `https://github.com/berkantshn/ha-discord-gateway`.
 3. Install and start "Discord Gateway". Home Assistant builds it on the Pi. Ports 53, 80 and 443 must be free.
 4. Reserve `<PI_IP>` on your router (DHCP reservation).
 5. Set up your client devices as described below.
 
 **As a local add-on**
 
-Copy `addon/discord_gateway` to `/local_apps/discord_gateway` on the device, choose ⋮ → Reload in the store, then
+Download `discord_gateway-addon.zip` from the [latest release](https://github.com/berkantshn/ha-discord-gateway/releases/latest) and extract it, or use `addon/discord_gateway` from this repository. Copy the folder to `/local_apps/discord_gateway` on the device, choose ⋮ → Reload in the store, then
 continue from step 3. Other releases may use `/addons` and `ha addons` in place of `/local_apps` and `ha apps`.
 
 ### Client setup
@@ -319,15 +323,15 @@ yazabilir.*
 
 **Bu repodan**
 
-1. Home Assistant'ta Ayarlar → Eklentiler (veya Uygulamalar) → mağaza → ⋮ → Depolar'ı açın.
-2. `https://github.com/berkantshn/ha-discord-gateway` adresini ekleyin.
+1. Bu sayfanın üstündeki **Add to Home Assistant** düğmesine bas. Ya da Home Assistant'ta Ayarlar → Eklentiler (veya Uygulamalar) → mağaza → ⋮ → Depolar'ı açın.
+2. Düğmeyi kullanmadıysan: `https://github.com/berkantshn/ha-discord-gateway` adresini ekleyin.
 3. "Discord Gateway"i kurup başlatın. Home Assistant eklentiyi Pi üzerinde derler. 53, 80 ve 443 portları boş olmalıdır.
 4. Modemde `<PI_IP>` adresini sabitleyin (DHCP rezervasyonu).
 5. İstemci cihazları aşağıdaki gibi ayarlayın.
 
 **Yerel eklenti olarak**
 
-`addon/discord_gateway` klasörünü cihazda `/local_apps/discord_gateway` olarak kopyalayın, mağazada ⋮ → Yeniden yükle'yi
+[Son sürümden](https://github.com/berkantshn/ha-discord-gateway/releases/latest) `discord_gateway-addon.zip` dosyasını indirip çıkart ya da bu depodaki klasörü kullan. `addon/discord_gateway` klasörünü cihazda `/local_apps/discord_gateway` olarak kopyalayın, mağazada ⋮ → Yeniden yükle'yi
 seçin ve 3. adımdan devam edin. Başka sürümlerde `/local_apps` ve `ha apps` yerine `/addons` ve `ha addons` geçerli
 olabilir.
 
